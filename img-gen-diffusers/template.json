@@ -1,0 +1,7 @@
+{
+  "id": "img-gen-diffusers-template",
+  "description": "A template for img-gen-diffusers app",
+  "app": "img-gen-diffusers",
+  "partitioner": "fanout-replica",
+  "assembler": "zipper"
+}
