@@ -1,0 +1,7 @@
+{
+  "id": "img-gen-diffusers-flux-template",
+  "description": "A template for flux",
+  "app": "img-gen-diffusers-flux",
+  "partitioner": "fanout-replica",
+  "assembler": "zipper"
+}

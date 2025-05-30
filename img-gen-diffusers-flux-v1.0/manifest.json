@@ -1,0 +1,15 @@
+{
+  "Name": "img-gen-diffusers-flux",
+  "Version": "1.0",
+  "Platform": "docker",
+  "platform_config": {
+    "container": "dibekbytenite/flux-generator"
+  },
+  "Entrypoint": "main.py",
+  "device_requirements": {
+    "min_cpu": 2,
+    "min_memory": 2,
+    "gpu": ["NVIDIA GeForce RTX 4090"]
+  },
+  "Description": "An app named img-gen-diffusers that uses the Diffusers library to generate images from text prompts. It supports Flux Schnell and various configurations for image generation."
+}
