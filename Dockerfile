@@ -1,45 +1,32 @@
-# syntax=docker/dockerfile:1.6
-# Builds an image with FLUX 1 [schnell] fully pre-cached.
-# ► Needs ≈ 65 GB RAM while building, so use a high-memory BuildKit worker.
-
 FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
 
-ARG DEBIAN_FRONTEND=noninteractive
+# Set environment variables
+ENV HF_HOME=/models
+RUN mkdir -p /models && mkdir -p /app
+WORKDIR /app
 
-# ───────────────────────────── system packages ────────────────────────────────
+# Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential git curl libgl1-mesa-glx \
+    build-essential \
+    git \
+    curl \
+    libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
-# ───────────────────────────── python packages ────────────────────────────────
 RUN pip install --no-cache-dir \
-        --extra-index-url https://download.pytorch.org/whl/cu121 \
-        "xformers==0.0.25.post1" \
-        "diffusers==0.32.2" \
-        "transformers==4.46.1" \
-        "accelerate>=0.31.2,<2.0" \
-        "huggingface_hub>=0.27.0,<1.0" \
-        "peft>=0.10.0" \
-        "sentencepiece>=0.1.99" \
-        "protobuf>=3.20.3,<4" \
-        psutil
+    torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 \
+    diffusers==0.27.2 transformers==4.40.0 accelerate==0.27.2 \
+    huggingface_hub==0.20.2 xformers psutil
 
-# ───────────────────────────── model preload ──────────────────────────────────
-ENV HF_HOME=/models
-RUN mkdir -p /models
+ARG HF_TOKEN
+ENV HUGGINGFACE_HUB_TOKEN=$HF_TOKEN
 
-# Mount the Hugging Face token as a **BuildKit secret** named hf_token
-RUN --mount=type=secret,id=hf_token,env=HF_TOKEN \
-    python - <<'PY'
-import os, torch
-from diffusers import FluxPipeline
-FluxPipeline.from_pretrained(
-    "black-forest-labs/FLUX.1-schnell",
-    cache_dir="/models",
-    torch_dtype=torch.bfloat16,
-    token=os.getenv("HF_TOKEN")
-).save_pretrained("/models/FLUX.1-schnell")
-PY
+# Download model safely (no class resolution)
+RUN python3 -c "\
+from huggingface_hub import login, snapshot_download;\
+login(token='$HUGGINGFACE_HUB_TOKEN');\
+snapshot_download(repo_id='black-forest-labs/FLUX.1-schnell', cache_dir='/models', local_dir='/models/flux', local_dir_use_symlinks=False)\
+"
 
-WORKDIR /app
-CMD ["/bin/bash"]
+# Replace with working model_index.json
+COPY model_index.json /models/flux/model_index.json
