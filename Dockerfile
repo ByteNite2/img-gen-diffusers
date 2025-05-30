@@ -29,8 +29,7 @@ ENV HF_HOME=/models
 RUN mkdir -p /models
 
 # Mount the Hugging Face token as a **BuildKit secret** named hf_token
-RUN --mount=type=secret,id=hf_token,env=HF_TOKEN \
-    python - <<'PY'
+RUN python - <<'PY'
 import os, torch
 from diffusers import FluxPipeline
 FluxPipeline.from_pretrained(
