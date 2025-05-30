@@ -1,56 +1,46 @@
-# === BYTENITE APP - MAIN SCRIPT ===
-import json
 import os
+import json
 import torch
-from diffusers import FluxPipeline  # Updated import
 import time
+from diffusers import DiffusionPipeline
 
-task_dir = os.getenv('TASK_DIR')
-task_results_dir = os.getenv('TASK_RESULTS_DIR')
-app_params = json.loads(os.getenv('APP_PARAMS'))
+# Load prompt from environment
+task_results_dir = os.getenv('TASK_RESULTS_DIR', '/results')
+app_params = json.loads(os.getenv('APP_PARAMS', '{"prompt": "a steampunk airship flying through clouds"}'))
 
-def generate_image(prompt, output_path):
+def load_pipeline():
+    print("Loading Flux Schnell pipeline from local path...")
+    dtype = torch.float16  # Recommended for modern GPUs like RTX 4090
+
+    # Load pipeline from local folder — no custom_pipeline needed
+
+    pipe = DiffusionPipeline.from_pretrained("/models/flux", torch_dtype=torch.float16,
+    	custom_pipeline="StableDiffusionPipeline"  # explicitly set
+	).to("cuda")
+
+
+    try:
+        pipe.enable_xformers_memory_efficient_attention()
+        print("xformers enabled")
+    except Exception as e:
+        print(f"xformers error (non-blocking): {e}")
+
+    return pipe
+
+def generate_image(pipeline, prompt, output_path):
     print(f"Generating image for prompt: {prompt}")
-    
-    print(f"CUDA available: {torch.cuda.is_available()}")
-    print(f"CUDA device: {torch.cuda.get_device_name(0)}")
-    # Check for CUDA availability
-    if not torch.cuda.is_available():
-        raise EnvironmentError("CUDA is not available. Make sure you're running on a GPU-enabled environment.")
-
-    # Use bfloat16 as recommended for FLUX
-    dtype = torch.bfloat16
-
-    # Load Flux pipeline on GPU
-    pipeline = FluxPipeline.from_pretrained(
-        "/models/FLUX.1-schnell",
-        torch_dtype=torch.bfloat16
-    ).to("cuda")
-
-    start_time = time.time()
     with torch.inference_mode():
-        print("Inference started")
-        image = pipeline(
-            prompt,
-            num_inference_steps=4,
-            guidance_scale=0.0,
-            max_sequence_length=256,
-            height=640,
-            width=640,
-            generator=torch.Generator("cuda").manual_seed(0)
-        ).images[0]
-    end_time = time.time()
-
-    print(f"Inference completed in {end_time - start_time:.2f} seconds")
+        start = time.time()
+        image = pipeline(prompt).images[0]
+        end = time.time()
     image.save(output_path)
-    print(f"Image saved to: {output_path}")
+    print(f"Inference took {end - start:.2f} seconds. Image saved to {output_path}")
 
 if __name__ == '__main__':
-    print("Python task started")
+    if not torch.cuda.is_available():
+        raise EnvironmentError("CUDA not available. Please run on a GPU-enabled machine.")
+    
+    pipeline = load_pipeline()
     prompt = app_params["prompt"]
     output_path = os.path.join(task_results_dir, "output_image.png")
-    try:
-        generate_image(prompt, output_path)
-    except Exception as e:
-        print("Python exception: ", e)
-        raise e
+    generate_image(pipeline, prompt, output_path)
