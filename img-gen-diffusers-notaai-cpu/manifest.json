@@ -1,6 +1,6 @@
 {
-  "name": "img-gen-diffusers",
-  "version": "3.0",
+  "name": "img-gen-diffusers-notaai-cpu",
+  "version": "1.0",
   "platform": "docker",
   "description": "My first ByteNite app using stable diffusion",
   "entrypoint": "main.py",
