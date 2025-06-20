@@ -1,0 +1,7 @@
+{
+  "id": "img-gen-diffusers-notaai-cpu-template",
+  "description": "A template for SD image generation using Diffusers with NotaAI on CPU",
+  "app": "img-gen-diffusers-notaai-cpu",
+  "partitioner": "fanout-replica",
+  "assembler": "zipper"
+}

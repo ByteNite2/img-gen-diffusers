@@ -1,0 +1,15 @@
+{
+  "name": "img-gen-diffusers",
+  "version": "3.0",
+  "platform": "docker",
+  "description": "My first ByteNite app using stable diffusion",
+  "entrypoint": "main.py",
+  "platform_config": {
+    "container": "bytenite/python-torch-diffusers:latest",
+    "private_image": false
+  },
+  "device_requirements": {
+    "min_cpu": 16,
+    "min_memory": 32
+  }
+}

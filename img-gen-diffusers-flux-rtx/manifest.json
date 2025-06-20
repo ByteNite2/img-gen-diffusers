@@ -1,5 +1,5 @@
 {
-  "Name": "img-gen-diffusers-flux",
+  "Name": "img-gen-diffusers-flux-rtx",
   "Version": "1.0",
   "Platform": "docker",
   "platform_config": {
@@ -11,5 +11,5 @@
     "min_memory": 2,
     "gpu": ["NVIDIA GeForce RTX 4090"]
   },
-  "Description": "An app named img-gen-diffusers that uses the Diffusers library to generate images from text prompts. It supports Flux Schnell and various configurations for image generation."
+  "Description": "An image generation application using Diffusers with Flux on NVIDIA RTX 4090 GPUs"
 }
