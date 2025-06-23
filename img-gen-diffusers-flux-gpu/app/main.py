@@ -13,7 +13,7 @@ app_params = json.loads(os.getenv('APP_PARAMS'))
 chunk_number = int(os.getenv('CHUNK_NUMBER', '0'))
 
 # Model cache directory - adapt to your container structure
-MODEL_CACHE_DIR = os.getenv('MODEL_CACHE_DIR', '/app/models')
+MODEL_CACHE_DIR = os.getenv('MODEL_CACHE_DIR', '/models')
 
 def flush():
     """Clear GPU memory before loading the model"""
@@ -21,7 +21,7 @@ def flush():
     torch.cuda.empty_cache()
 
 def load_flux_model():
-    """Load FLUX.1-schnell for any NVIDIA GPU (optional RTX 4090 optimizations available)"""
+    """Load FLUX.1-schnell for any NVIDIA GPU (optional advanced optimizations for high-end GPUs)"""
     print("Loading FLUX.1-schnell model for NVIDIA GPU...")
     print(f"Task directory: {task_dir}")
     print(f"Results directory: {task_results_dir}")
@@ -30,17 +30,19 @@ def load_flux_model():
     
     # Clear any existing GPU memory
     flush()
-    
 
-    # Choose the most compatible torch dtype for NVIDIA GPUs
-    torch_dtype = torch.float16  # widely supported on NVIDIA GPUs
-    
-    # For RTX 4090 or H100, you can optionally use bfloat16 for better performance:
-    # torch_dtype = torch.bfloat16
+    # Dynamically select torch_dtype based on GPU type
+    gpu_name = torch.cuda.get_device_name().lower() if torch.cuda.is_available() else ""
+    if "4090" in gpu_name or "h100" in gpu_name:
+        torch_dtype = torch.bfloat16
+        print("Detected high-end GPU (RTX 4090/H100), using bfloat16.")
+    else:
+        torch_dtype = torch.float16
+        print("Using float16 for broad NVIDIA GPU compatibility.")
 
 
     # Check if model exists in cache
-    model_path = os.path.join(MODEL_CACHE_DIR, "flux-schnell")
+    model_path = os.path.join(MODEL_CACHE_DIR, "FLUX.1-schnell")
     
     if os.path.exists(model_path):
         print(f"Loading model from cache: {model_path}")
@@ -63,27 +65,19 @@ def load_flux_model():
     
     print("Enabling NVIDIA GPU optimizations...")
 
-    # Enable VAE optimizations (critical for RTX 4090)
-    pipe.vae.enable_tiling()
-    pipe.vae.enable_slicing()
+
+    # Enable VAE optimizations (recommended for large images or limited VRAM)
+    if hasattr(pipe.vae, "enable_tiling"): # hasattr to avoid errors if methods are missing
+        pipe.vae.enable_tiling()
+    if hasattr(pipe.vae, "enable_slicing"):
+        pipe.vae.enable_slicing()
     print("VAE tiling and slicing enabled")
     
-    # Enable sequential CPU offload (works better than model_cpu_offload for FLUX)
+    # Enable sequential CPU offload (helps reduce GPU memory usage)
     pipe.enable_sequential_cpu_offload()
     print("Sequential CPU offload enabled")
-    
-# --- RTX 4090-specific optimizations (uncomment if running on RTX 4090 or H100) ---
-    # pipe = FluxPipeline.from_pretrained(
-    #     model_path,
-    #     torch_dtype=torch.bfloat16,
-    #     local_files_only=True
-    # )
-    # print("Loaded with bfloat16 for RTX 4090/H100")
-    # pipe.vae.enable_tiling()
-    # pipe.vae.enable_slicing()
-    # pipe.enable_sequential_cpu_offload()
-    # -------------------------------------------------------------------------------
 
+    
     return pipe
 
 def generate_image(prompt, output_path):
@@ -106,7 +100,7 @@ def generate_image(prompt, output_path):
         print("Starting image generation...")
         image = pipe(
             prompt,
-            height=512,          # Default size, adjust as needed for your            # Uncomment below for best performance on RTX 4090/H100 GPUs GPU
+            height=512,          # Default size, adjust as needed for your GPU  
             width=512,            
             guidance_scale=0.0,  # FLUX.1-schnell optimal setting
             num_inference_steps=4,  # FLUX.1-schnell optimal setting
@@ -119,7 +113,7 @@ def generate_image(prompt, output_path):
         
     except torch.cuda.OutOfMemoryError as e:
         print(f"GPU out of memory even with optimizations: {e}")
-        print("Try using a quantized model version (Q8 or FP8) for your RTX 4090")
+        print("Try reducing image size or using a quantized model version (Q8 or FP8)")
         raise
     
     # Clear GPU cache after generation
