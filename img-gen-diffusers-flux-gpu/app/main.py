@@ -21,8 +21,8 @@ def flush():
     torch.cuda.empty_cache()
 
 def load_flux_model():
-    """Load FLUX.1-schnell optimized for RTX 4090"""
-    print("Loading FLUX.1-schnell model optimized for RTX 4090...")
+    """Load FLUX.1-schnell for any NVIDIA GPU (optional RTX 4090 optimizations available)"""
+    print("Loading FLUX.1-schnell model for NVIDIA GPU...")
     print(f"Task directory: {task_dir}")
     print(f"Results directory: {task_results_dir}")
     print(f"Model cache directory: {MODEL_CACHE_DIR}")
@@ -31,31 +31,38 @@ def load_flux_model():
     # Clear any existing GPU memory
     flush()
     
+
+    # Choose the most compatible torch dtype for NVIDIA GPUs
+    torch_dtype = torch.float16  # widely supported on NVIDIA GPUs
+    
+    # For RTX 4090 or H100, you can optionally use bfloat16 for better performance:
+    # torch_dtype = torch.bfloat16
+
+
     # Check if model exists in cache
     model_path = os.path.join(MODEL_CACHE_DIR, "flux-schnell")
     
     if os.path.exists(model_path):
         print(f"Loading model from cache: {model_path}")
-        # Use bfloat16 for better performance on RTX 4090
         pipe = FluxPipeline.from_pretrained(
             model_path,
-            torch_dtype=torch.bfloat16,
-            local_files_only=True
+            torch_dtype=torch_dtype,
+            local_files_only=True 
         )
     else:
         print("Model not found in cache, downloading...")
         hf_token = os.getenv('HF_TOKEN')
         pipe = FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-schnell",
-            torch_dtype=torch.bfloat16,
+            torch_dtype=torch_dtype,
             token=hf_token
         )
         # Save to cache for future use
         print(f"Saving model to cache: {model_path}")
         pipe.save_pretrained(model_path)
     
-    print("Enabling RTX 4090 optimizations...")
-    
+    print("Enabling NVIDIA GPU optimizations...")
+
     # Enable VAE optimizations (critical for RTX 4090)
     pipe.vae.enable_tiling()
     pipe.vae.enable_slicing()
@@ -65,10 +72,22 @@ def load_flux_model():
     pipe.enable_sequential_cpu_offload()
     print("Sequential CPU offload enabled")
     
+# --- RTX 4090-specific optimizations (uncomment if running on RTX 4090 or H100) ---
+    # pipe = FluxPipeline.from_pretrained(
+    #     model_path,
+    #     torch_dtype=torch.bfloat16,
+    #     local_files_only=True
+    # )
+    # print("Loaded with bfloat16 for RTX 4090/H100")
+    # pipe.vae.enable_tiling()
+    # pipe.vae.enable_slicing()
+    # pipe.enable_sequential_cpu_offload()
+    # -------------------------------------------------------------------------------
+
     return pipe
 
 def generate_image(prompt, output_path):
-    """Generate image optimized for RTX 4090"""
+    """Generate image using FLUX.1-schnell on any NVIDIA GPU"""
     print(f"Generating image for prompt: {prompt}")
     print(f"Output path: {output_path}")
     
@@ -82,12 +101,13 @@ def generate_image(prompt, output_path):
     start_time = time.time()
     
     try:
-        # RTX 4090 optimized parameters - based on working examples
+        # Use the pipeline to generate the image
+        # Adjust parameters for optimal performance on NVIDIA GPUs
         print("Starting image generation...")
         image = pipe(
             prompt,
-            height=512,          # RTX 4090 limit for FLUX
-            width=512,           # RTX 4090 limit for FLUX  
+            height=512,          # Default size, adjust as needed for your            # Uncomment below for best performance on RTX 4090/H100 GPUs GPU
+            width=512,            
             guidance_scale=0.0,  # FLUX.1-schnell optimal setting
             num_inference_steps=4,  # FLUX.1-schnell optimal setting
             max_sequence_length=256,
