@@ -1,5 +1,5 @@
 {
-  "Name": "img-gen-diffusers-flux-rtx",
+  "Name": "img-gen-diffusers-flux-gpu",
   "Version": "1.0",
   "Platform": "docker",
   "platform_config": {
