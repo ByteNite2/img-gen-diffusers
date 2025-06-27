@@ -1,7 +1,7 @@
 {
-  "id": "img-gen-diffusers-flux-template",
+  "id": "img-gen-diffusers-flux-gpu-template",
   "description": "A template for flux",
-  "app": "img-gen-diffusers-flux",
+  "app": "img-gen-diffusers-flux-gpu",
   "partitioner": "fanout-replica",
   "assembler": "zipper"
 }
