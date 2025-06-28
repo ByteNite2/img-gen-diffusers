@@ -9,6 +9,9 @@
 - [Project Structure](#project-structure)
 - [CPU vs. GPU Versions](#cpu-vs-gpu-versions)
 - [Prerequisites](#prerequisites) _(If you've already onboarded to ByteNite, you can skip this section!)_
+- [Onboarding to ByteNite](#onboarding-to-bytenite)
+- [Development Environment Setup](#development-environment-setup)
+- [How to Use the CLI/SDK or API](#how-to-use-the-clisdk-or-api)
 - [Installing the ByteNite Developer CLI](#installing-the-bytenite-developer-cli)
 - [App Components](#app-components)
   - [App (img-gen-diffusers)](#app-img-gen-diffusers)
@@ -78,21 +81,22 @@ Both versions use the same core logic and can be deployed interchangeably depend
 ## Prerequisites
 
 **Already onboarded to ByteNite?**  
-If you’ve already created an account, set up payment, and installed the CLI for a previous app, you can skip this section and jump straight to [Installing the ByteNite Developer CLI](#installing-the-bytenite-developer-cli) or the next relevant step.
+If you’ve already created an account, set up payment, and installed the CLI for a previous app, you can skip this section and jump straight to [Onboarding to ByteNite](#onboarding-to-bytenite) or the next relevant step.
 
+---
+
+## Onboarding to ByteNite
 
 👤 **Create an account**
 
 - You will need to [Request an Access Code](https://www.bytenite.com/get-access) and fill out the resulting form with your contact info.
-- Once recieveing your access code, you will be able to sign up on the [computing platform](https://app.bytenite.com).
-
+- Once receiving your access code, you will be able to sign up on the [computing platform](https://app.bytenite.com).
 
 💳 **Add a payment method**
 
 - Once logged into the platform, go to the [Billing Page](https://app.bytenite.com/billing) (can also access by clicking into the Billing tab in the sidebar).
 - Locate the Payment Info card and navigate to the Customer Portal. Add a payment method to your account through Stripe.
 - Your payment info is used for manual and automatic top-ups. Ensure you have enough funds to avoid service interruptions.
-
 
 🪙 **Redeem ByteChips**
 
@@ -102,9 +106,21 @@ If you’ve already created an account, set up payment, and installed the CLI fo
 
 ---
 
-**For CLI/SDK Users (Recommended)**
+## Development Environment Setup
 
-Most users should use the CLI/SDK for the easiest experience:
+🛠️ **Set up development tools**
+
+- Python 3.8+ for local development or running scripts.
+- Git (to clone this repository)
+- (Optional) Docker if you plan to build custom containers.
+
+---
+
+## How to Use the CLI/SDK or API
+
+You can use **either** the CLI/SDK **or** the API to interact with ByteNite. Most users should use the CLI/SDK for the easiest experience. Advanced users can use the API for programmatic access. You do not need to do both.
+
+### For CLI/SDK Users (Recommended)
 
 - Download and install the ByteNite Developer CLI (see below for instructions by OS).
 - Authenticate by running:
@@ -114,7 +130,7 @@ Most users should use the CLI/SDK for the easiest experience:
   This will open a browser window for secure login.  
 - Once authenticated, you can use all `bytenite` CLI commands to manage apps, engines, templates, and jobs.
 
-**For API Users (Advanced/Programmatic Access)**
+### For API Users (Advanced/Programmatic Access)
 
 If you plan to use the ByteNite API directly (e.g., with Postman or custom scripts), you’ll need an API key and access token:
 
@@ -130,15 +146,6 @@ If you plan to use the ByteNite API directly (e.g., with Postman or custom scrip
 - An access token is required to authenticate all requests to the ByteNite API (including Postman).
 - Request an access token from the Access Token endpoint using your API key. Tokens last 1 hour by default.
 - See the [API Reference](https://docs.bytenite.com/api) for details and example requests.
-
----
-
-🛠️ **Set up development tools**
-
-- Python 3.8+ for local development or running scripts.
-- Git (to clone this repository)
-- (Optional) Docker if you plan to build custom containers.
-
 
 ## Installing the ByteNite Developer CLI
 
