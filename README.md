@@ -1,4 +1,4 @@
-# img-gen-diffusers
+# How to Build a Scalable Image Generation Pipeline with ByteNite
 
 ---
 
@@ -8,7 +8,7 @@
 - [What is ByteNite?](#what-is-bytenite)
 - [Project Structure](#project-structure)
 - [CPU vs. GPU Versions](#cpu-vs-gpu-versions)
-- [Prerequisites](#prerequisites)
+- [Prerequisites](#prerequisites) _(If you've already onboarded to ByteNite, you can skip this section!)_
 - [Installing the ByteNite Developer CLI](#installing-the-bytenite-developer-cli)
 - [App Components](#app-components)
   - [App (img-gen-diffusers)](#app-img-gen-diffusers)
@@ -77,6 +77,10 @@ Both versions use the same core logic and can be deployed interchangeably depend
 
 ## Prerequisites
 
+**Already onboarded to ByteNite?**  
+If you’ve already created an account, set up payment, and installed the CLI for a previous app, you can skip this section and jump straight to [Installing the ByteNite Developer CLI](#installing-the-bytenite-developer-cli) or the next relevant step.
+
+
 👤 **Create an account**
 
 - You will need to [Request an Access Code](https://www.bytenite.com/get-access) and fill out the resulting form with your contact info.
@@ -96,27 +100,41 @@ Both versions use the same core logic and can be deployed interchangeably depend
 - Go to the Account Balance card and click "Redeem". Enter your coupon code and complete the process. Refresh to confirm the balance.
 - We'd love to get you started with free credits to test our platform, [contact ByteNite support](https://bytenite.com/info) to request some.
 
+---
+
+**For CLI/SDK Users (Recommended)**
+
+Most users should use the CLI/SDK for the easiest experience:
+
+- Download and install the ByteNite Developer CLI (see below for instructions by OS).
+- Authenticate by running:
+    ```sh
+    bytenite auth
+    ```
+  This will open a browser window for secure login.  
+- Once authenticated, you can use all `bytenite` CLI commands to manage apps, engines, templates, and jobs.
+
+**For API Users (Advanced/Programmatic Access)**
+
+If you plan to use the ByteNite API directly (e.g., with Postman or custom scripts), you’ll need an API key and access token:
 
 🔐 **Get an API key**
 
-- For programmatic access to launch your jobs, you'll need an API key linked to your account.
-- Go to https://app.bytenite.com/profile or click your profile avatar (top right).
-- Click 'New API Key', configure its settings, and enter the confirmation code sent to your email.
+- Go to [your ByteNite profile](https://app.bytenite.com/profile) or click your profile avatar (top right).
+- Click **New API Key**, configure its settings, and enter the confirmation code sent to your email.
 - Copy your API key immediately and store it securely. You will not be able to view it again.
 - If a key is no longer needed or is compromised, revoke it from your profile.
 
-
 🔑 **Get an access token**
 
-- An access token is required to authenticate all requests to the ByteNite API (except OTP and access token requests).
+- An access token is required to authenticate all requests to the ByteNite API (including Postman).
 - Request an access token from the Access Token endpoint using your API key. Tokens last 1 hour by default.
+- See the [API Reference](https://docs.bytenite.com/api) for details and example requests.
 
-*Should we just highlight the oAuth2 flow here? since API keys are only needed for job launching, not building?*
-
+---
 
 🛠️ **Set up development tools**
 
-- Download and install the ByteNite Developer CLI (see below for instructions by OS).
 - Python 3.8+ for local development or running scripts.
 - Git (to clone this repository)
 - (Optional) Docker if you plan to build custom containers.
@@ -214,8 +232,8 @@ Follow these steps to get up and running with your own ByteNite image generation
 1. **Clone this repository to your own machine:**
 
    ```sh
-   git clone <your-fork-or-this-repo-url>
-   cd img-gen-diffusers
+   git clone <your-fork-or-this-repo-url> && \
+   cd img-gen-diffusers 
    ```
 2. **(Optional but recommended) Fork this repo to your own GitHub account.**
 3. **Install the ByteNite Developer CLI** (see instructions above for your OS).
@@ -227,27 +245,28 @@ Follow these steps to get up and running with your own ByteNite image generation
 5. **Push the apps and engines to your ByteNite account:**
 
    ```sh
-   bytenite app push ./img-gen-diffusers-notaai-cpu
-   bytenite app push ./img-gen-diffusers-flux-gpu
-   bytenite engine push ./fanout-replica
+   bytenite app push ./img-gen-diffusers-notaai-cpu && \
+   bytenite app push ./img-gen-diffusers-flux-gpu && \
+   bytenite engine push ./fanout-replica && \
    bytenite engine push ./zipper
    ```
 6. **Activate the apps and engines:**
 
    ```sh
-   bytenite app activate img-gen-diffusers-notaai-cpu
-   bytenite app activate img-gen-diffusers-flux-gpu
-   bytenite engine activate fanout-replica
+   bytenite app activate img-gen-diffusers-notaai-cpu && \
+   bytenite app activate img-gen-diffusers-flux-gpu && \
+   bytenite engine activate fanout-replica && \
    bytenite engine activate zipper
    ```
 7. **Push the job templates:**
 
    ```sh
-   bytenite template push ./templates/img-gen-diffusers-notaai-cpu-template.json
+   bytenite template push ./templates/img-gen-diffusers-notaai-cpu-template.json && \
    bytenite template push ./templates/img-gen-diffusers-flux-gpu-template.json
    ```
-8. **Launch a job using the API (we have a handy [Postman collection]() ready for you).**
+8. **Launch a job using the API (we have a handy [Postman collection]() ready for you).** ([**GPU** Job Postman collection](https://www.postman.com/bytenite-team/workspace/bytenite-api-demos/collection/42601786-b99aa52d-c026-47a6-a5b6-57d2712dfeb7?action=share&source=copy-link&creator=42601786) or [**CPU** Job Postman collection](https://www.postman.com/bytenite-team/workspace/bytenite-api-demos/collection/36285584-6fe2a402-4559-4165-8b1f-cf11affa119a?action=share&source=copy-link&creator=42601786)) or proceed with the methods described below.
 
+> **Note:** If using Postman, you’ll need to generate an access token with your API key and include it in the `Authorization` header for all requests.
 ---
 
 ## ByteNite Dev CLI: Commands & Usage
