@@ -1,0 +1,8 @@
+{
+  "id": "img-gen-diffusers-flux-gpu-noreplica-template",
+  "description": "A template for flux",
+  "app": "img-gen-diffusers-flux-gpu",
+  "partitioner": "passthrough",
+  "assembler": "passthrough"
+}
+
