@@ -4,89 +4,60 @@ import os
 import torch
 from diffusers import FluxPipeline
 import time
-import gc
 
-# Environment variables from your service
+# Environment variables
 task_dir = os.getenv('TASK_DIR')
 task_results_dir = os.getenv('TASK_RESULTS_DIR')
 app_params = json.loads(os.getenv('APP_PARAMS'))
-chunk_number = int(os.getenv('CHUNK_NUMBER', '0'))
 
-# Model cache directory - adapt to your container structure
-MODEL_CACHE_DIR = os.getenv('MODEL_CACHE_DIR', '/models')
-
-def flush():
-    """Clear GPU memory before loading the model"""
-    gc.collect()
-    torch.cuda.empty_cache()
+# Model cache directory
+MODEL_CACHE_DIR = os.getenv('MODEL_CACHE_DIR', '/app/models')
 
 def load_flux_model():
-    """Load FLUX.1-schnell for any NVIDIA GPU (optional advanced optimizations for high-end GPUs)"""
-    print("Loading FLUX.1-schnell model for NVIDIA GPU...")
-    print(f"Task directory: {task_dir}")
-    print(f"Results directory: {task_results_dir}")
-    print(f"Model cache directory: {MODEL_CACHE_DIR}")
-    print(f"Chunk number: {chunk_number}")
+    """Load the FLUX.1-schnell model from cache directory"""
+    print("Loading FLUX.1-schnell model...")
     
-    # Clear any existing GPU memory
-    flush()
-
-    # Dynamically select torch_dtype based on GPU type
-    gpu_name = torch.cuda.get_device_name().lower() if torch.cuda.is_available() else ""
-    if "4090" in gpu_name or "h100" in gpu_name:
-        torch_dtype = torch.bfloat16
-        print("Detected high-end GPU (RTX 4090/H100), using bfloat16.")
+    # Determine dtype based on device availability
+    if torch.cuda.is_available():
+        dtype = torch.float16
+        device = "cuda"
+        print("CUDA available - using float16")
     else:
-        torch_dtype = torch.float16
-        print("Using float16 for broad NVIDIA GPU compatibility.")
-
-
+        dtype = torch.float32
+        device = "cpu"
+        print("CUDA not available - using float32 on CPU")
+    
     # Check if model exists in cache
-    model_path = os.path.join(MODEL_CACHE_DIR, "FLUX.1-schnell")
+    model_path = os.path.join(MODEL_CACHE_DIR, "flux-schnell")
     
     if os.path.exists(model_path):
         print(f"Loading model from cache: {model_path}")
         pipe = FluxPipeline.from_pretrained(
             model_path,
-            torch_dtype=torch_dtype,
-            local_files_only=True 
+            torch_dtype=dtype,
+            local_files_only=True
         )
     else:
         print("Model not found in cache, downloading...")
         hf_token = os.getenv('HF_TOKEN')
         pipe = FluxPipeline.from_pretrained(
             "black-forest-labs/FLUX.1-schnell",
-            torch_dtype=torch_dtype,
+            torch_dtype=dtype,
             token=hf_token
         )
         # Save to cache for future use
         print(f"Saving model to cache: {model_path}")
         pipe.save_pretrained(model_path)
     
-    print("Enabling NVIDIA GPU optimizations...")
-
-
-    # Enable VAE optimizations (recommended for large images or limited VRAM)
-    if hasattr(pipe.vae, "enable_tiling"): # hasattr to avoid errors if methods are missing
-        pipe.vae.enable_tiling()
-    if hasattr(pipe.vae, "enable_slicing"):
-        pipe.vae.enable_slicing()
-    print("VAE tiling and slicing enabled")
-    
-    # Enable sequential CPU offload (helps reduce GPU memory usage)
-    pipe.enable_sequential_cpu_offload()
-    print("Sequential CPU offload enabled")
-
+    # Move to appropriate device
+    pipe = pipe.to(device)
+    print(f"Model loaded on {device.upper()}")
     
     return pipe
 
 def generate_image(prompt, output_path):
-    """Generate image using FLUX.1-schnell on any NVIDIA GPU"""
+    """Generate image using FLUX.1-schnell model"""
     print(f"Generating image for prompt: {prompt}")
-    print(f"Output path: {output_path}")
-    
-    # Clear GPU cache before loading
-    flush()
     
     # Load the model
     pipe = load_flux_model()
@@ -94,85 +65,36 @@ def generate_image(prompt, output_path):
     # Generate image
     start_time = time.time()
     
-    try:
-        # Use the pipeline to generate the image
-        # Adjust parameters for optimal performance on NVIDIA GPUs
-        print("Starting image generation...")
-        image = pipe(
-            prompt,
-            height=512,          # Default size, adjust as needed for your GPU  
-            width=512,            
-            guidance_scale=0.0,  # FLUX.1-schnell optimal setting
-            num_inference_steps=4,  # FLUX.1-schnell optimal setting
-            max_sequence_length=256,
-            generator=torch.Generator("cpu").manual_seed(0)
-        ).images[0]
-        
-        generation_time = time.time() - start_time
-        print(f"Image generated in {generation_time:.2f} seconds")
-        
-    except torch.cuda.OutOfMemoryError as e:
-        print(f"GPU out of memory even with optimizations: {e}")
-        print("Try reducing image size or using a quantized model version (Q8 or FP8)")
-        raise
+    # FLUX.1-schnell specific parameters
+    generator_device = "cpu" if not torch.cuda.is_available() else "cuda"
+    image = pipe(
+        prompt,
+        height=1024,
+        width=1024,
+        guidance_scale=0.0,  # FLUX.1-schnell works best with guidance_scale=0
+        num_inference_steps=4,  # FLUX.1-schnell is optimized for few steps
+        max_sequence_length=256,
+        generator=torch.Generator(generator_device).manual_seed(0)
+    ).images[0]
     
-    # Clear GPU cache after generation
-    flush()
-    
-    # Ensure results directory exists (your service creates it, but double-check)
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    generation_time = time.time() - start_time
+    print(f"Image generated in {generation_time:.2f} seconds")
     
     # Save the image
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     image.save(output_path)
     print(f"Image saved to: {output_path}")
-    
-    # Print memory usage for debugging
-    if torch.cuda.is_available():
-        max_memory_gb = torch.cuda.max_memory_allocated() / (1024**3)
-        print(f'Max GPU memory used: {max_memory_gb:.2f} GB')
-    
-    return output_path
 
 if __name__ == '__main__':
-    print("=== BYTENITE FLUX IMAGE GENERATION TASK ===")
     print("Python task started")
-    print(f"GPU: {torch.cuda.get_device_name() if torch.cuda.is_available() else 'CPU only'}")
-    print(f"Working directory: {os.getcwd()}")
-    
-    # Validate environment variables
-    if not task_dir:
-        raise ValueError("TASK_DIR environment variable not set")
-    if not task_results_dir:
-        raise ValueError("TASK_RESULTS_DIR environment variable not set")
-    if not app_params:
-        raise ValueError("APP_PARAMS environment variable not set or invalid JSON")
     
     # Get prompt from app parameters
-    prompt = app_params.get("prompt")
-    if not prompt:
-        raise ValueError("No 'prompt' found in APP_PARAMS")
-    
-    print(f"Prompt: {prompt}")
-    
-    # Generate output filename - include chunk number if needed
-    if chunk_number > 0:
-        output_filename = f"output_image_chunk_{chunk_number}.png"
-    else:
-        output_filename = "output_image.png"
-    
-    output_path = os.path.join(task_results_dir, output_filename)
+    prompt = app_params["prompt"]
+    output_path = os.path.join(task_results_dir, "output_image.png")
     
     try:
-        generated_path = generate_image(prompt, output_path)
-        print("=== TASK COMPLETED SUCCESSFULLY ===")
-        print(f"Generated image: {generated_path}")
-        
-        # Print file info for verification
-        if os.path.exists(generated_path):
-            file_size = os.path.getsize(generated_path)
-            print(f"File size: {file_size:,} bytes")
-        
+        generate_image(prompt, output_path)
+        print("Task completed successfully")
     except Exception as e:
-        print("=== TASK FAILED ===")
-        print(f"Python exception: {e}")
+        print("Python exception: ", e)
         raise e
