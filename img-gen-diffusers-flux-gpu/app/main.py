@@ -4,6 +4,7 @@ import os
 import torch
 from diffusers import FluxPipeline
 import time
+import random
 
 # Environment variables
 task_dir = os.getenv('TASK_DIR')
@@ -64,8 +65,9 @@ def generate_image(prompt, output_path):
     
     # Generate image
     start_time = time.time()
-    
+
     # FLUX.1-schnell specific parameters
+    random_seed = random.randint(0, 2**32 - 1)
     generator_device = "cpu" if not torch.cuda.is_available() else "cuda"
     image = pipe(
         prompt,
@@ -74,9 +76,11 @@ def generate_image(prompt, output_path):
         guidance_scale=0.0,  # FLUX.1-schnell works best with guidance_scale=0
         num_inference_steps=4,  # FLUX.1-schnell is optimized for few steps
         max_sequence_length=256,
-        generator=torch.Generator(generator_device).manual_seed(0)
+        generator=torch.Generator(generator_device).manual_seed(random_seed),  # Fixed seed for reproducibility
     ).images[0]
     
+    print("debug - test random seed 2")
+
     generation_time = time.time() - start_time
     print(f"Image generated in {generation_time:.2f} seconds")
     
