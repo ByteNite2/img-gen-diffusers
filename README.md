@@ -1,5 +1,11 @@
 # How to Build a Scalable Image Generation Pipeline with ByteNite
 
+<p align="center">
+  <a href="https://app.bytenite.com" target="_blank">
+    <img src="https://img.shields.io/badge/Try%20on%20platform%20%E2%9E%A1%EF%B8%8F-%20-b027ce?style=for-the-badge&labelColor=b027ce&color=b027ce&logoColor=white" />
+  </a>
+</p>
+
 ---
 
 ## Table of Contents
