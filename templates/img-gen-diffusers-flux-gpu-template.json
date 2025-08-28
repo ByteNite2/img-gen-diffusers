@@ -1,7 +1,22 @@
 {
   "id": "img-gen-diffusers-flux-gpu-template",
-  "description": "A template for flux",
-  "app": "img-gen-diffusers-flux-gpu",
+  "description": "Flux Schnell on a A100 GPU to generate several image variations from a prompt.",
   "partitioner": "fanout-replica",
-  "assembler": "zipper"
+  "app": "img-gen-diffusers-flux-gpu",
+  "assembler": "zipper",
+  "dataSource": {
+    "dataSourceDescriptor": "bypass"
+  },
+  "dataDestination": {
+    "dataSourceDescriptor": "bucket"
+  },
+  "params": {
+    "partitioner": {
+      "num_replicas": 5
+    },
+    "assembler": {},
+    "app": {
+      "prompt": "A fantasy landscape, trending on artstation"
+    }
+  }
 }

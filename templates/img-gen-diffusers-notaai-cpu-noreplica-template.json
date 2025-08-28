@@ -1,8 +1,20 @@
 {
   "id": "img-gen-diffusers-notaai-cpu-noreplica-template",
-  "description": "A template for SD image generation using Diffusers with NotaAI on CPU",
+  "description": "NotaAI on CPU to generate an image from a prompt.",
   "app": "img-gen-diffusers-notaai-cpu",
   "partitioner": "passthrough",
-  "assembler": "passthrough"
+  "assembler": "passthrough",
+  "dataSource": {
+    "dataSourceDescriptor": "bypass"
+  },
+  "dataDestination": {
+    "dataSourceDescriptor": "bucket"
+  },
+  "params": {
+    "partitioner": {},
+    "assembler": {},
+    "app": {
+      "prompt": "A fantasy landscape, trending on artstation"
+    }
+  }
 }
-
